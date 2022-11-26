@@ -3,6 +3,7 @@
 
 from flask import Flask, request
 from flask_restful import Api, Resource
+from const import *
 import bitarray
 import numpy as np
 

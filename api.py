@@ -33,8 +33,17 @@ def get_key_56_bit(key: bitarray.bitarray):
     return key
 
 
-def permutation(bits: bitarray.bitarray, permutation_function: dict):
-    pass
+# apply permutation function to bitarray, return permuted bitarray
+def permutation(bits: bitarray.bitarray, permutation_function: list):
+    new_bits = bitarray.bitarray()
+    for i in permutation_function:
+        new_bits.append(bits[i])
+    return new_bits
+
+
+# apply circular left bit shift to bitarray, return shift bitarray
+def circular_left_shift(bits: bitarray.bitarray, shamt: int):
+    return bits[shamt:] + bits[:shamt]
 
 
 class Encrypt(Resource):
@@ -63,7 +72,19 @@ class Encrypt(Resource):
         # convert 64-bit key to 56-bit key
         key_bits = get_key_56_bit(key_bits)
 
-        # apply initial permutation function to message
+        # perform 16 iterations of encryption process
+        for i in range(16):
+            # partition key into left and right components
+            key_left = key_bits[:len(key_bits)/2]
+            key_right = key_bits[len(key_bits)/2:]
+
+            # apply key bit shift to each key
+            key_left = circular_left_shift(key_left, KEY_BIT_SHIFT[i])
+            key_right = circular_left_shift(key_right, KEY_BIT_SHIFT[i])
+
+            # recombine keys and apply compression permutation
+            key_bits = key_left + key_right
+
         return {
             'cipher': ''
         }, 200

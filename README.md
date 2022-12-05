@@ -12,9 +12,13 @@ Open project directory
 ```bash
 cd data-encryption-standard
 ```
+Install required Python packages
+```bash
+pip install -r requirements.txt
+```
 Run API script
 ```bash
-python api.py
+python des.py
 ```
 
 ## Endpoints
@@ -31,7 +35,7 @@ Response:
 }
 ```
 ### /encrypt {POST}
-Encrypts given 64-bit (8 character ASCII) message with provided 64-bit (binary) key. Returns corresponding 64-bit (binary) cipher.
+Encrypts given 64-bit (8 character UTF-8) message with provided 64-bit (binary) key. Returns corresponding 64-bit (binary) cipher.
 
 Request:
 ```json
@@ -49,7 +53,7 @@ Response:
 ```
 
 ### /decrypt {POST}
-Decrypts given 64-bit (binary) cipher with provided 64-bit (binary) key. Returns corresponding 64-bit (8 character ASCII) message.
+Decrypts given 64-bit (binary) cipher with provided 64-bit (binary) key. Returns corresponding 64-bit (8 character UTF-8) message.
 
 Request:
 ```json

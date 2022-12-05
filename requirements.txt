@@ -1,0 +1,4 @@
+bitarray
+numpy
+Flask
+Flask-restful

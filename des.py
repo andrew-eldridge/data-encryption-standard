@@ -6,6 +6,7 @@ from flask_restful import Api, Resource
 from const import *
 import bitarray
 import numpy as np
+import argparse
 
 
 class Key(Resource):
@@ -51,11 +52,18 @@ def generate_keys(key_bits: bitarray.bitarray):
     keys = []
     # apply PC1 key permutation to produce 56-bit key
     key_bits = permutation(key_bits, PC1)
+
+    if LOG:
+        print(f'Key (56-bit) after initial permutation: {key_bits.to01()}')
+
     for i in range(16):
         # apply bit shift corresponding to curr round to k_l and k_r
         key_bits = circular_left_shift(key_bits[:28], KEY_BIT_SHIFT[i]) + circular_left_shift(key_bits[28:], KEY_BIT_SHIFT[i])
         # apply PC2 key permutation to produce 48-bit round key
-        keys.append(permutation(key_bits, PC2))
+        round_key = permutation(key_bits, PC2)
+        if LOG:
+            print(f'Round key {i} (48-bit) after PC2 permutation: {round_key.to01()}')
+        keys.append(round_key)
     return keys
 
 
@@ -95,20 +103,29 @@ def dec_to_bin(dec: int):
 
 
 # perform DES encryption round
-def des_round(cipher_bits: bitarray.bitarray, round_key: bitarray.bitarray):
+def des_round(cipher_bits: bitarray.bitarray, round_key: bitarray.bitarray, i: int):
     # get c_l and c_r from cipher bits
     c_l = cipher_bits[:32]
     c_r = cipher_bits[32:]
     c_r_orig = c_r
+    if LOG:
+        print(f'Round {i} c_l input: {c_l.to01()}')
+        print(f'Round {i} c_r input: {c_r.to01()}')
 
     # apply expansion permutation to c_r
     c_r = permutation(c_r, EXPANSION_PERMUTATION)
+    if LOG:
+        print(f'Round {i} c_r after expansion permutation: {c_r.to01()}')
 
     # XOR between expanded c_r and round key
     c_r = XOR(c_r, round_key)
+    if LOG:
+        print(f'Round {i} c_r after XOR with round key: {c_r.to01()}')
 
     # apply S-box substitution to output of expansion permutation
     c_r_partition = partition(c_r, 8)
+    if LOG:
+        print(f'Round {i} c_r blocks before S-box: {" ".join([c_r_b.to01() for c_r_b in c_r_partition])}')
     for j, c_r_j in enumerate(c_r_partition):
         # get S-box col (bits 1-4) and row (bits 0,5)
         col = bin_to_dec(c_r_j[1:5])
@@ -118,15 +135,23 @@ def des_round(cipher_bits: bitarray.bitarray, round_key: bitarray.bitarray):
         c_r_partition[j] = dec_to_bin(S_BOX[j][col + row * 16])
 
     # recombine c_r partition after applying S-box
+    if LOG:
+        print(f'Round {i} c_r blocks after S-box: {" ".join([c_r_b.to01() for c_r_b in c_r_partition])}')
     c_r = concat_partition(c_r_partition)
 
     # apply P-box permutation to output of S-box
     c_r = permutation(c_r, P_BOX)
+    if LOG:
+        print(f'Round {i} c_r after P-box: {c_r.to01()}')
 
     # XOR between c_l and output of P-box
     c_r = XOR(c_l, c_r)
+    if LOG:
+        print(f'Round {i} c_r after XOR with c_l: {c_r.to01()}')
 
     # return output cipher for round
+    if LOG:
+        print(f'Round {i} output: {c_r_orig.to01()} {c_r.to01()}')
     return c_r_orig + c_r
 
 
@@ -138,7 +163,7 @@ class Encrypt(Resource):
         Encrypt message using DES
 
         Request:
-            message: String (8-character UTF-8 string)
+            message: String (8-character plaintext string)
             key: String (64-character binary string)
 
         Response:
@@ -153,25 +178,35 @@ class Encrypt(Resource):
         message_bits = bitarray.bitarray()
         message_bits.frombytes(message.encode('utf-8'))
         key_bits = bitarray.bitarray(key)
-
-        # generate round keys
-        keys = generate_keys(key_bits)
+        if LOG:
+            print(f'Message: {message}')
+            print(f'Message bits: {message_bits.to01()}')
+            print(f'Initial key (64-bit): {key_bits.to01()}')
 
         # apply initial permutation
         message_bits = permutation(message_bits, INITIAL_PERMUTATION)
+        if LOG:
+            print(f'Message after initial permutation (IP): {message_bits.to01()}')
+
+        # generate round keys
+        keys = generate_keys(key_bits)
 
         # init cipher
         cipher_bits = message_bits
 
         # perform 16 iterations of encryption process
         for i in range(16):
-            cipher_bits = des_round(cipher_bits, keys[i])
+            cipher_bits = des_round(cipher_bits, keys[i], i)
 
         # swap c_l and c_r
         cipher_bits = cipher_bits[32:] + cipher_bits[:32]
+        if LOG:
+            print(f'Cipher after final swap: {cipher_bits.to01()}')
 
         # apply final permutation
         cipher_bits = permutation(cipher_bits, FINAL_PERMUTATION)
+        if LOG:
+            print(f'Cipher after final permutation (IP^-1): {cipher_bits.to01()}')
 
         return {
             'cipher': cipher_bits.to01()
@@ -190,7 +225,7 @@ class Decrypt(Resource):
             key: String (64-character binary string)
 
         Response:
-            message: String (8-character UTF-8 string)
+            message: String (8-character plaintext string)
         """
         # request body
         req_json = request.get_json(force=True)
@@ -200,22 +235,31 @@ class Decrypt(Resource):
         # convert message and key to bit arrays
         cipher_bits = bitarray.bitarray(cipher)
         key_bits = bitarray.bitarray(key)
+        if LOG:
+            print(f'Cipher: {cipher_bits.to01()}')
+            print(f'Initial key (64-bit): {key_bits.to01()}')
+
+        # apply initial permutation
+        cipher_bits = permutation(cipher_bits, INITIAL_PERMUTATION)
+        if LOG:
+            print(f'Cipher after initial permutation (IP): {cipher_bits.to01()}')
 
         # generate round keys
         keys = generate_keys(key_bits)
 
-        # apply initial permutation
-        cipher_bits = permutation(cipher_bits, INITIAL_PERMUTATION)
-
         # perform 16 iterations of reversed encryption process
         for i in reversed(range(16)):
-            cipher_bits = des_round(cipher_bits, keys[i])
+            cipher_bits = des_round(cipher_bits, keys[i], i)
 
         # swap c_l and c_r
         cipher_bits = cipher_bits[32:] + cipher_bits[:32]
+        if LOG:
+            print(f'Cipher after final swap: {cipher_bits.to01()}')
 
         # apply final permutation
         cipher_bits = permutation(cipher_bits, FINAL_PERMUTATION)
+        if LOG:
+            print(f'Cipher after final permutation (IP^-1): {cipher_bits.to01()}')
 
         try:
             return {
@@ -241,4 +285,13 @@ api.add_resource(Decrypt, API_BASE + 'decrypt')
 
 
 if __name__ == '__main__':
+    # command-line args
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-log', action='store_true')
+    args = parser.parse_args()
+
+    # check for log flag
+    if args.log:
+        LOG = True
+
     app.run(host='127.0.0.1', debug=True)

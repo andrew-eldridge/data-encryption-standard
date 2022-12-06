@@ -2,3 +2,4 @@ bitarray
 numpy
 Flask
 Flask-restful
+argparse

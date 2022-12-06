@@ -1,5 +1,5 @@
 # Data Encryption Standard Implementation
-Python implementation of the encryption and decryption process of Data Encryption Standard, completed as the final project for Math 587 - Introduction to Cryptography. Group members: Weston Watts, Caroline Boozer, Ellis McLarty, Andrew Eldridge.
+Python implementation of the Data Encryption Standard algorithm, completed as the final project for Math 587 - Introduction to Cryptography at USC. Group members: Weston Watts, Caroline Boozer, Ellis McLarty, Andrew Eldridge.
 
 Encryption and decryption methods are exposed as REST API endpoints using the Flask-RESTful library.
 
@@ -16,9 +16,9 @@ Install required Python packages
 ```bash
 pip install -r requirements.txt
 ```
-Run API script
+Run API script (optional flag `log` for detailed output logs)
 ```bash
-python des.py
+python des.py [-log]
 ```
 
 ## Endpoints
@@ -35,7 +35,7 @@ Response:
 }
 ```
 ### /encrypt {POST}
-Encrypts given 64-bit (8 character UTF-8) message with provided 64-bit (binary) key. Returns corresponding 64-bit (binary) cipher.
+Encrypts given 64-bit (8 character plaintext) message with provided 64-bit (binary) key. Returns corresponding 64-bit (binary) cipher.
 
 Request:
 ```json
@@ -53,7 +53,7 @@ Response:
 ```
 
 ### /decrypt {POST}
-Decrypts given 64-bit (binary) cipher with provided 64-bit (binary) key. Returns corresponding 64-bit (8 character UTF-8) message.
+Decrypts given 64-bit (binary) cipher with provided 64-bit (binary) key. Returns corresponding 64-bit (8 character plaintext) message.
 
 Request:
 ```json

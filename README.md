@@ -31,7 +31,7 @@ Request: N/A
 Response:
 ```json
 {
-  "key": String
+  "key": "0111001000010100111110101000100101100100101001100110111001001011"
 }
 ```
 ### /encrypt {POST}
@@ -40,15 +40,15 @@ Encrypts given 64-bit (8 character plaintext) message with provided 64-bit (bina
 Request:
 ```json
 {
-  "message": String,
-  "key": String
+  "message": "hllowrld",
+  "key": "1101010010111111010100111100011111000010010010110100110100000101"
 }
 ```
 
 Response:
 ```json
 {
-  "cipher": String
+  "cipher": "1101001011010011110110010001100011000010011000110110011100101111"
 }
 ```
 
@@ -58,14 +58,14 @@ Decrypts given 64-bit (binary) cipher with provided 64-bit (binary) key. Returns
 Request:
 ```json
 {
-  "cipher": String,
-  "key": String
+  "cipher": "1101001011010011110110010001100011000010011000110110011100101111",
+  "key": "1101010010111111010100111100011111000010010010110100110100000101"
 }
 ```
 
 Response:
 ```json
 {
-  "message": String
+  "message": "hllowrld"
 }
 ```

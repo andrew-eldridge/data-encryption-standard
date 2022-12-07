@@ -129,7 +129,7 @@ def des_round(cipher_bits: bitarray.bitarray, round_key: bitarray.bitarray, i: i
     for j, c_r_j in enumerate(c_r_partition):
         # get S-box col (bits 1-4) and row (bits 0,5)
         col = bin_to_dec(c_r_j[1:5])
-        row = bin_to_dec(c_r_j[0:0] + c_r_j[5:5])
+        row = bin_to_dec(c_r_j[0:1] + c_r_j[5:])
 
         # apply S-box substitution corresponding to col/row to current block
         c_r_partition[j] = dec_to_bin(S_BOX[j][col + row * 16])
